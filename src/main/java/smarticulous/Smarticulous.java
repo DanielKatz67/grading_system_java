@@ -117,7 +117,7 @@ public class Smarticulous {
         st.executeUpdate("CREATE TABLE IF NOT EXISTS QuestionGrade ("+
                 "SubmissionId INTEGER,"+
                 "QuestionId INTEGER,"+
-                "Grade REAL" +
+                "Grade REAL," +
                 "PRIMARY KEY (SubmissionId, QuestionId);");
 
         return db;
