@@ -95,7 +95,6 @@ public class Smarticulous {
         return db;
     }
 
-
     /**
      * Close the DB if it is open.
      *
@@ -113,7 +112,8 @@ public class Smarticulous {
     /**
      * Add a user to the database / modify an existing user.
      * <p>
-     * Add the user to the database if they don't exist. If a user with user.username does exist,
+     * Add the user to the database if they don't exist.
+     * If a user with user.username does exist,
      * update their password and firstname/lastname in the database.
      *
      * @param user
@@ -122,8 +122,39 @@ public class Smarticulous {
      * @throws SQLException
      */
     public int addOrUpdateUser(User user, String password) throws SQLException {
-        // TODO: Implement
-        return -1;
+        // Selecting the user with the same userName (unique), if exits
+        PreparedStatement psSelect = db.prepareStatement("SELECT UserId FROM User WHERE UserName=?");
+        psSelect.setString(1, user.username);
+        ResultSet res = psSelect.executeQuery();
+
+        // The user exits - need to update
+        if(res.next()){
+            PreparedStatement psUpdate = db.prepareStatement("UPDATE User SET Firstname=?, Lastname=?, Password=? WHERE UserName=? ");
+            psUpdate.setString(1, user.firstname);
+            psUpdate.setString(2, user.lastname);
+            psUpdate.setString(3, password);
+            psUpdate.setString(4, user.username);
+            psUpdate.executeUpdate();
+            return res.getInt("UserId");
+        }
+        // The user does not exit - need to add
+        else{
+            PreparedStatement psInsert = db.prepareStatement("INSERT INTO User (Username, Firstname, Lastname, Password) VALUES (?,?,?,?) ;");
+            psInsert.setString(1, user.username);
+            psInsert.setString(2, user.firstname);
+            psInsert.setString(3, user.lastname);
+            psInsert.setString(4, password);
+            psInsert.executeUpdate();
+
+            // Retrieve the generated key; this is the UserId
+            ResultSet keys = psInsert.getGeneratedKeys();
+            if (keys.next()) {
+                // The index of the generated key is 1
+                return keys.getInt(1);
+            } else {
+                throw new SQLException("Creating user failed, no ID obtained.");
+            }
+        }
     }
 
 
