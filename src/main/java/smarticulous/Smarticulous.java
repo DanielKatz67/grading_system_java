@@ -85,7 +85,40 @@ public class Smarticulous {
      */
     public Connection openDB(String dburl) throws SQLException {
         // TODO: Implement
-        return null;
+        db = DriverManager.getConnection(dburl);
+        Statement st = db.createStatement();
+
+        st.executeUpdate("CREATE TABLE IF NOT EXISTS User ("+
+                "UserId INTEGER PRIMARY KEY,"+
+                "Username TEXT UNIQUE,"+
+                "Firstname TEXT,"+
+                "Lastname TEXT,"+
+                "Password TEXT);");
+
+        st.executeUpdate("CREATE TABLE IF NOT EXISTS Exercise ("+
+                "ExerciseId INTEGER PRIMARY KEY,"+
+                "Name TEXT,"+
+                "DueDate INTEGER);");
+
+        st.executeUpdate("CREATE TABLE IF NOT EXISTS Question ("+
+                "ExerciseId INTEGER PRIMARY KEY,"+
+                "QuestionId INTEGER PRIMARY KEY,"+
+                "Name TEXT,"+
+                "Desc TEXT,"+
+                "Points INTEGER);");
+
+        st.executeUpdate("CREATE TABLE IF NOT EXISTS Submission ("+
+                "SubmissionId INTEGER PRIMARY KEY,"+
+                "UserId INTEGER,"+
+                "ExerciseId INTEGER,"+
+                "SubmissionTime INTEGER);");
+
+        st.executeUpdate("CREATE TABLE IF NOT EXISTS QuestionGrade ("+
+                "SubmissionId INTEGER PRIMARY KEY,"+
+                "QuestionId INTEGER PRIMARY KEY,"+
+                "Grade REAL);");
+        
+        return db;
     }
 
 
