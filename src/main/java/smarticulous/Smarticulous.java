@@ -85,7 +85,7 @@ public class Smarticulous {
      */
     public Connection openDB(String dburl) throws SQLException {
         // TODO: Implement
-        db = DriverManager.getConnection(dburl);
+        db = DriverManager.getConnection("jdbc:sqlite:" +dburl);
         Statement st = db.createStatement();
 
         st.executeUpdate("CREATE TABLE IF NOT EXISTS User ("+
