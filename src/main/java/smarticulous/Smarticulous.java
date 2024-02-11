@@ -199,7 +199,7 @@ public class Smarticulous {
         psSelect.setInt(1, exercise.id);
         ResultSet res = psSelect.executeQuery();
 
-        // An exercise with this id already existed in the database
+        // An exercise with this id is already existed in the database
         if(res.next()){
             return -1 ;
         }
@@ -223,10 +223,10 @@ public class Smarticulous {
     }
 
     /**
-     * Add an exercise to the database.
+     * Helper function to addExercise.
+     * Add an Question to the database.
      *
-     * @param exercise
-     * @return the new exercise id, or -1 if an exercise with this id already existed in the database.
+     * @param question, exerciseId
      * @throws SQLException
      */
     private void addQuestion(Exercise.Question question, int exerciseId) throws SQLException {
@@ -256,12 +256,14 @@ public class Smarticulous {
         String NameEx, nameQ, descQ;
         Date DueDate;
 
+        // iterating the exercises and adding them to the list
         while (resExercises.next()){
             ExerciseId = resExercises.getInt("ExerciseId");
             NameEx = resExercises.getString("Name");
             DueDate = resExercises.getDate("DueDate");
             Exercise currentEx = new Exercise(ExerciseId, NameEx, DueDate);
 
+            // Extracting the questions in the current exercise
             PreparedStatement psQuestions = db.prepareStatement("SELECT * FROM Question WHERE ExerciseId=?;");
             psQuestions.setInt(1, ExerciseId);
             ResultSet resQuestions = psQuestions.executeQuery();
@@ -294,8 +296,47 @@ public class Smarticulous {
      * @throws SQLException
      */
     public int storeSubmission(Submission submission) throws SQLException {
-        // TODO: Implement
-        return -1;
+        PreparedStatement psUser = db.prepareStatement("SELECT * FROM User WHERE Username=?");
+        psUser.setString(1, submission.user.username);
+        ResultSet resUser = psUser.executeQuery();
+
+        // The corresponding user doesn't exist in the database
+        if(! resUser.next()){
+            return -1 ;
+        }
+        // The corresponding user exists in the database - adding the submission
+        else{
+            PreparedStatement psInsert;
+            // The id field of the submission will be ignored if it is -1
+            if (submission.id == -1){
+                psInsert = db.prepareStatement("INSERT INTO Submission (UserId, ExerciseId, SubmissionTime) VALUES (?,?,?);");
+                psInsert.setInt(1, resUser.getInt("UserId"));
+                psInsert.setInt(2, submission.exercise.id);
+                // converting the Date to milliseconds since 1/1/1970 as needed
+                java.sql.Date dueDateMillis = new java.sql.Date(submission.submissionTime.getTime());
+                psInsert.setDate(3, dueDateMillis);
+            }
+            // The id field of the submission is not -1
+            else{
+                psInsert = db.prepareStatement("INSERT INTO Submission (UserId, ExerciseId, SubmissionTime, SubmissionId) VALUES (?,?,?,?);");
+                psInsert.setInt(1, resUser.getInt("UserId"));
+                psInsert.setInt(2, submission.exercise.id);
+                // converting the Date to milliseconds since 1/1/1970 as needed
+                java.sql.Date dueDateMillis = new java.sql.Date(submission.submissionTime.getTime());
+                psInsert.setDate(3, dueDateMillis);
+                psInsert.setInt(4, submission.id);
+            }
+            psInsert.executeUpdate();
+
+            // Retrieve the generated key; this is the SubmissionId
+            ResultSet keys = psInsert.getGeneratedKeys();
+            if (keys.next()) {
+                // The index of the generated key is 1
+                return keys.getInt(1);
+            } else {
+                throw new SQLException("Creating submission failed, no ID obtained.");
+            }
+        }
     }
 
 
