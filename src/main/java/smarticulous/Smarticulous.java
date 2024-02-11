@@ -361,8 +361,21 @@ public class Smarticulous {
      * @return
      */
     PreparedStatement getLastSubmissionGradesStatement() throws SQLException {
-        // TODO: Implement
-        return null;
+        StringBuilder query = new StringBuilder();
+        query.append("SELECT S.SubmissionId, G.QuestionId, G.Grade, S.SubmissionTime ");
+        query.append("FROM Submission S ");
+        // connecting all the relevant tables
+        query.append("INNER JOIN QuestionGrade G on G.SubmissionId=S.SubmissionId ");
+        // filter the wanted rows
+        query.append("WHERE S.UserId=(SELECT UserId FROM User WHERE Username = ?) " +
+                     "AND S.ExerciseId=? " +
+                     "AND S.SubmissionTime = (SELECT MAX(SubmissionTime) FROM " +
+                     "Submission WHERE UserId = S.UserId AND ExerciseId = S.ExerciseId) ");
+        query.append("ORDER BY G.QuestionId ");
+        // The number of questions in the given exercise
+        query.append("LIMIT ? ");
+
+        return db.prepareStatement(query.toString());
     }
 
     /**
