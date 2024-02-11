@@ -171,8 +171,18 @@ public class Smarticulous {
      * @see <a href="https://crackstation.net/hashing-security.htm">How to Hash Passwords Properly</a>
      */
     public boolean verifyLogin(String username, String password) throws SQLException {
-        // TODO: Implement
-        return false;
+        PreparedStatement ps = db.prepareStatement("SELECT Password FROM User WHERE UserName=?");
+        ps.setString(1, username);
+        ResultSet res = ps.executeQuery();
+
+        // The user exits - need to check the password
+        if(res.next() &&  password.equals(res.getString("Password"))){
+            return true;
+        }
+        // The user does not exit or the password is wrong
+        else{
+            return false;
+        }
     }
 
     // =========== Exercise Management =============
