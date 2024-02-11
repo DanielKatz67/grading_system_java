@@ -195,8 +195,47 @@ public class Smarticulous {
      * @throws SQLException
      */
     public int addExercise(Exercise exercise) throws SQLException {
-        // TODO: Implement
-        return -1;
+        PreparedStatement psSelect = db.prepareStatement("SELECT * FROM Exercise WHERE ExerciseId=?");
+        psSelect.setInt(1, exercise.id);
+        ResultSet res = psSelect.executeQuery();
+
+        // An exercise with this id already existed in the database
+        if(res.next()){
+            return -1 ;
+        }
+        // New exercise
+        else{
+            PreparedStatement psInsert = db.prepareStatement("INSERT INTO Exercise (Name, DueDate, ExerciseId) VALUES (?,?,?);");
+            psInsert.setString(1, exercise.name);
+            // converting the Date to milliseconds since 1/1/1970 as needed
+            java.sql.Date dueDateMillis = new java.sql.Date(exercise.dueDate.getTime());
+            psInsert.setDate(2, dueDateMillis);
+            psInsert.setInt(3, exercise.id);
+            psInsert.executeUpdate();
+
+            // adding the questions to the DB
+            for(Exercise.Question question : exercise.questions){
+                addQuestion(question, exercise.id);
+            }
+
+            return exercise.id;
+        }
+    }
+
+    /**
+     * Add an exercise to the database.
+     *
+     * @param exercise
+     * @return the new exercise id, or -1 if an exercise with this id already existed in the database.
+     * @throws SQLException
+     */
+    private void addQuestion(Exercise.Question question, int exerciseId) throws SQLException {
+        PreparedStatement psInsert = db.prepareStatement("INSERT INTO Question (ExerciseId, Name, Desc, Points) VALUES (?,?,?,?);");
+        psInsert.setInt(1, exerciseId);
+        psInsert.setString(2, question.name);
+        psInsert.setString(3, question.desc);
+        psInsert.setInt(4, question.points);
+        psInsert.executeUpdate();
     }
 
 
@@ -209,8 +248,37 @@ public class Smarticulous {
      * @throws SQLException
      */
     public List<Exercise> loadExercises() throws SQLException {
-        // TODO: Implement
-        return null;
+        PreparedStatement psAllExercises = db.prepareStatement("SELECT * FROM Exercise ORDER BY ExerciseId;");
+        ResultSet resExercises = psAllExercises.executeQuery();
+
+        List<Exercise> exercisesList = new ArrayList<>();
+        int ExerciseId, pointsQ;
+        String NameEx, nameQ, descQ;
+        Date DueDate;
+
+        while (resExercises.next()){
+            ExerciseId = resExercises.getInt("ExerciseId");
+            NameEx = resExercises.getString("Name");
+            DueDate = resExercises.getDate("DueDate");
+            Exercise currentEx = new Exercise(ExerciseId, NameEx, DueDate);
+
+            PreparedStatement psQuestions = db.prepareStatement("SELECT * FROM Question WHERE ExerciseId=?;");
+            psQuestions.setInt(1, ExerciseId);
+            ResultSet resQuestions = psQuestions.executeQuery();
+
+            // Store all the questions of this exercise
+            List<Exercise.Question> Questions = new ArrayList<>();
+            while (resQuestions.next()){
+                nameQ = resQuestions.getString("Name");
+                descQ = resQuestions.getString("Desc");
+                pointsQ = resQuestions.getInt("Points");
+                currentEx.addQuestion(nameQ, descQ, pointsQ);
+            }
+
+            // Add the current exercise to the list
+            exercisesList.add(currentEx);
+        }
+        return exercisesList;
     }
 
     // ========== Submission Storage ===============
